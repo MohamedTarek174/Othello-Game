@@ -2,23 +2,23 @@ import tkinter as tk
 from Difficulty import *
 from Board import *
 from Player import *
+import functions
+#Win - Draw - ShowValidMoves - IsValid
 
 class Manger:
-    def __init__(self, master , difficulty_level):
+    def __init__(self, master ):
         self.master = master
         self.master.title("Othello")
-        self.game = DifficultyFactory.create_difficulty(difficulty_level)
-        self.user = Player(32,1)
-        self.user.symbol ="x"
-        self.PC = Player(32,2)
-        self.PC.symbol ="y"
+        #Player is 1
+        #PC     is 2
+        self.user = Player(32,"b")
+        self.PC = Player(32,"w")
 
-        self.board = Board(master,self.game,self.user,self.PC)
+        self.board = Board(master,self.user,self.PC)
 
 def main():
     root = tk.Tk()
-    difficulty_level = "easy"
-    app = Manger(root,difficulty_level)
+    app = Manger(root)
     root.mainloop()
 
 if __name__ == "__main__":
