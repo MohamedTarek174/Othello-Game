@@ -1,27 +1,37 @@
 import tkinter as tk
 import tkinter.messagebox
-from Difficulty import *
 import sys
 import Player
 import time
+import random
 from math import *
-#Check Final result for:
-    #NO more moves even the board is not full
-    #The board is full
+
 #AlphaBeta
 
 
 convert = []
+
 class Board:
     def __init__(self, master ,user,pc):
         self.master = master
         self.user = user
         self.pc = pc
 
-
         self.master.title("Othello")
-        self.canvas = tk.Canvas(master, width=400, height=400, bg="green")
+        self.canvas = tk.Canvas(master, width=400, height=400, bg="white")#Original 400*400
         self.canvas.pack()
+        
+        # Show Score board
+        self.score_frame = tk.Frame(master, width=400, height=50, bg="white")
+        self.score_frame.pack(fill="both", expand=True)
+
+        # Player Score
+        self.player1_score_label = tk.Label(self.score_frame, text="User : 2", font=("Helvetica", 16))
+        self.player1_score_label.pack(side="left", padx=10, pady=10)
+        # PC Score
+        self.player2_score_label = tk.Label(self.score_frame, text="PC : 2", font=("Helvetica", 16))
+        self.player2_score_label.pack(side="right", padx=10, pady=10)
+        
         self.board_size = 8
         self.draw_board()
         self.canvas.bind("<Button-1>", self.on_click)
@@ -30,7 +40,7 @@ class Board:
         self.place_oval(3,4,self.pc.symbol)
         self.place_oval(4,3,self.pc.symbol)
 
-        self.showValidMoves()
+        self.showValidMoves()#Show the first four availabe moves
 #-----------------------------------------------------------------------
     def draw_board(self):
         self.board = [[0]*self.board_size for _ in range(self.board_size)] # Initialize the board
@@ -40,44 +50,7 @@ class Board:
                 y0 = j * 50
                 x1 = x0 + 50
                 y1 = y0 + 50
-                self.canvas.create_rectangle(x0, y0, x1, y1, fill="green")
-#-----------------------------------------------------------------------
-    def on_click(self, event):
-        global convert
-        usercol = event.x // 50  
-        userrow = event.y // 50
-        #User Turn
-        if self.valid_move(userrow,usercol,1):
-            self.board[userrow][usercol] = 1
-            x0 = usercol * 50 + 5  
-            y0 = userrow * 50 + 5  
-            x1 = x0 + 40
-            y1 = y0 + 40
-            self.canvas.create_oval(x0, y0, x1, y1,fill="black")
-            self.make_line(convert,1)
-
-      
-        
-        self.clearValidMoves()#Clear the Highlighted ovals that valid to the user
-
-        #PC Turn
-        pcrow,pccolm = self.create_difficulty("easy")        
-        #If no Valid moves
-        if pcrow == None or pcrow == None:
-            self.GameOver()
-            return 
-        self.board[pcrow][pccolm] = 2
-        x0 = pccolm * 50 + 5  
-        y0 = pcrow * 50 + 5  
-        x1 = x0 + 40
-        y1 = y0 + 40
-        self.canvas.create_oval(x0, y0, x1, y1,fill="white")
-        self.make_line(convert,2)
-        
-        self.GameOver()
-        
-
-        self.showValidMoves()
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill="green")         
 #-----------------------------------------------------------------------
     def place_oval(self,row , col,symbol):
         if 0 <= col < self.board_size and 0 <= row < self.board_size and self.board[row][col] == 0:
@@ -95,36 +68,73 @@ class Board:
                     self.canvas.create_oval(x0, y0, x1, y1, fill="black")  
                 elif symbol == "w":
                     self.canvas.create_oval(x0, y0, x1, y1, fill="white")
-                print(self.board)
                 print()
 #-----------------------------------------------------------------------
-    # def checkZeros(self):#Check if the game is finished when board full
-    #     for i in range(self.board_size):
-    #         for j in range(self.board_size):
-    #             if self.board[i][j] == 0:
-    #                 return True
-    #     return False #Board is full
-#-----------------------------------------------------------------------
-    def finalResult(self):#Contain Draw and Winner (NOT nessecery to be Full)
-        sum = 0
-        sum_1 = 0
-        sum_2 = 0
-        for i in range(self.board_size):
-            for j in range(self.board_size):
-                if self.board[i][j] != 0:
-                    sum+=1
-                    if self.board[i][j] == 1 :
-                        sum_1+=1
+    def on_click(self, event):
+        #------------------User Turn----------------------------------
+        global convert
+        usercol = event.x // 50  
+        userrow = event.y // 50
+        #User Turn
+        if (not self.valid_move(userrow,usercol,1) and self.Availabe_moves):#not valid move even there are
+            return
+        
+        if self.valid_move(userrow,usercol,1):
+            self.board[userrow][usercol] = 1
+            x0 = usercol * 50 + 5  
+            y0 = userrow * 50 + 5   
+            x1 = x0 + 40
+            y1 = y0 + 40
+            self.canvas.create_oval(x0, y0, x1, y1,fill="black")
+            self.make_line(convert,1)
+        
+        #If user pick not available move and there are/is availabe move(s)
 
-                    if self.board[i][j] == 2 :
-                        sum_1+=2    
-        if sum_1 == sum_2: #Draw Case
-            return 0
-        else :
-            return 1 if sum_1 > sum_2 else 2 
+        NewUserScore = self.ScoreRecord(1)#It Calculate the new updated score after making a move
+        NewPCScore = self.ScoreRecord(2)
+        self.player1_score_label.config(text="User : " + str(NewUserScore))
+        self.player2_score_label.config(text="PC : " + str(NewPCScore))
+
+
+        #Clear the Highlighted ovals that valid to the user
+        self.clearValidMoves()
+
+        self.PC_move()
+#-----------------------------------------------------------------------
+    def PC_move(self):
+        #------------------PC Turn----------------------------------
+        pcrow,pccolm = self.create_difficulty("easy")      
+        if pcrow == None or pcrow == None:#If no Valid moves
+            self.GameOver()  
+            #Show the Avialable moves again when no valid moves for PC and there are for user
+            self.showValidMoves()
+            return
+         
+        self.board[pcrow][pccolm] = 2
+        x0 = pccolm * 50 + 5  
+        y0 = pcrow * 50 + 5  
+        x1 = x0 + 40
+        y1 = y0 + 40
+        self.canvas.create_oval(x0, y0, x1, y1,fill="white")
+        self.make_line(convert,2)
+
+        NewUserScore = self.ScoreRecord(1)#It Calculate the new updated score after making a move
+        NewPcScore = self.ScoreRecord(2)  #It Calculate the new updated score after making a move
+
+        self.player1_score_label.config(text="User : " + str(NewUserScore))
+        self.player2_score_label.config(text="PC : " + str(NewPcScore))
+        
+        AMlist = self.Availabe_moves(1)
+        if (not AMlist):#After PC move if no valid moves for User , return to PC and check for GameOver()
+            self.PC_move()            
+
+        
+        self.GameOver()
+        self.showValidMoves()
 #-----------------------------------------------------------------------
     def valid_move(self, x, y, playernum):
         global convert
+        tmpconvert = [] #Creating temp list contain the valid line(s) should be converted
         oppenentnum = 2 if playernum == 1 else 1
         if  self.board[x][y] != 0:
             return False
@@ -142,16 +152,20 @@ class Board:
             convert.append((rows, cols))#Add the valid moves
             rows += direction[0]
             cols += direction[1]
-            while (rows in range(self.board_size) and cols in range(self.board_size)):
+            flag = True
+            while (rows in range(self.board_size) and cols in range(self.board_size) and flag ):
                 if self.board[rows][cols] == 0:
                     convert.clear()
                     break
                 if self.board[rows][cols] == playernum:
-                    return True
-                convert.append((rows, cols))#Add the valid moves for user
-                rows += direction[0]
-                cols += direction[1]
-        return False
+                    tmpconvert.extend(convert)# Add 1 Valid line 
+                    flag = False
+                if(flag):
+                    convert.append((rows, cols))#Add the valid moves for user
+                    rows += direction[0]
+                    cols += direction[1]
+        convert = tmpconvert
+        return False if not convert else True
 #-----------------------------------------------------------------------
     def make_line(self, convertedList,playernum):
         # oppenentnum = 2 if playernum == 1 else 1
@@ -208,24 +222,58 @@ class Board:
                 if self.valid_move(x, y, 2):
                     return x, y  
             else:#NO availabe moves for the PC
-                return None, None  
+                return None, None 
+#-----------------------------------------------------------------------
+    
+#-----------------------------------------------------------------------
+    def finalResult(self):#Contain Draw and Winner (NOT nessecery to be Full)
+        sum_1 = 0
+        sum_2 = 0
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                if self.board[i][j] != 0:
+                    if self.board[i][j] == 1 :
+                        sum_1+=1
+                    elif self.board[i][j] == 2 :
+                        sum_2+=1  
+
+
+
+        if sum_1 == sum_2: #Draw Case
+            return 0
+        else :
+            return 1 if sum_1 > sum_2 else 2 
+#-----------------------------------------------------------------------
+    def ScoreRecord(self,playernum):
+        sum = 0
+        for i in range(self.board_size):
+            for j in range(self.board_size):
+                if self.board[i][j] == playernum :
+                    sum+=1
+        return sum
 #-----------------------------------------------------------------------
     def GameOver(self):
         list1 = self.Availabe_moves(1)
         list2 = self.Availabe_moves(2)
 
         if not list1 and not list2: #Means no more moves for both User and PC
-            if self.finalResult == 1:
-                # tkinter.messagebox.showinfo("Game Over", "It's a draw!")
-                print("User Wins")
-                sys.exit(0)
-            elif self.finalResult == 2:
-                # tkinter.messagebox.showinfo("Game Over", "It's a draw!")
-                print("PC Wins")
-                sys.exit(0)
-            else:
-                # tkinter.messagebox.showinfo("Game Over", "It's a draw!")
-                print("Draw!!")
-                sys.exit(0)
+            if self.finalResult() == 1:
+                score = self.ScoreRecord(1)
+                self.player1_score_label.config(text="User Wins with score " + str(score))
+                self.player2_score_label.config(text="")
 
-         
+            elif self.finalResult() == 2:
+                score = self.ScoreRecord(2)
+                self.player1_score_label.config(text="PC Wins with score " + str(score))
+                self.player2_score_label.config(text="")
+            else:
+                score = self.ScoreRecord(2)
+                self.player1_score_label.config(text="Draw with score " + str(score))
+                self.player2_score_label.config(text="")
+#-----------------------------------------------------------------------
+    # def checkZeros(self):#Check if the game is finished when board full
+    #     for i in range(self.board_size):
+    #         for j in range(self.board_size):
+    #             if self.board[i][j] == 0:
+    #                 return True
+    #     return False #Board is full

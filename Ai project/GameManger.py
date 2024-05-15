@@ -1,8 +1,6 @@
 import tkinter as tk
-from Difficulty import *
 from Board import *
 from Player import *
-import functions
 #Win - Draw - ShowValidMoves - IsValid
 
 class Manger:
