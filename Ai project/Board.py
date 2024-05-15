@@ -1,6 +1,5 @@
 import tkinter as tk
 import tkinter.messagebox
-import sys
 import Player
 import time
 import random
@@ -8,7 +7,7 @@ from math import *
 
 #AlphaBeta
 
-
+depth = 0
 convert = []
 
 class Board:
@@ -206,12 +205,15 @@ class Board:
                     self.canvas.create_rectangle(x0, y0, x1, y1,fill="green")              
 #-----------------------------------------------------------------------
     def create_difficulty(self,level):
+            global depth
             if level == "easy":
                 return self.easyMode()
             elif level == "medium":
-                return Medium()
+                depth = 3
+                return self.mediumMode()
             elif level == "hard":
-                return Hard()
+                depth = 5
+                return self.hardMode()
 #-----------------------------------------------------------------------
     def easyMode(self):
             empty_cells = []
@@ -224,7 +226,70 @@ class Board:
             else:#NO availabe moves for the PC
                 return None, None 
 #-----------------------------------------------------------------------
-    
+    def mediumMode(self):
+        global depth
+        alphabetaResult = self.alphaBeta(self.board,depth,-float("inf"),float("inf"),2)
+        location = alphabetaResult[2]
+        x = location[0]
+        y = location[1]
+        return x,y  
+#-----------------------------------------------------------------------
+    def hardMode(self):
+        global depth
+        alphabetaResult = self.alphaBeta(self.board,depth,-float("inf"),float("inf"),2)
+        location = alphabetaResult[2]
+        x = location[0]
+        y = location[1]
+        return x,y     
+#-----------------------------------------------------------------------
+    def alphaBeta(self,myboard,depth,alpha,beta,maximizing):
+        Availbesboards = []
+        choices = []
+
+        for x in range(8):
+            for y in range(8):
+                if self.valid_move(x,y,2):
+                    test = self.validBoard(2)
+                    Availbesboards.append(test)#list of boards that each (solution of valid move)
+                    choices.append([x,y])#valid points/move that make this possible solution
+
+        if depth == 0 or len(choices) == 0:#no valid moves
+            return (self.easyMode())
+
+        if maximizing == 2:#Max the move for the PC
+            v = -float("inf")
+            bestBoard = []
+            bestChoice = []
+            for Avilabeboard in Availbesboards:#Check each possible board 
+                boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,1)#Call the new possible board to check Min
+                if boardValue[0]>v:
+                    v = boardValue[0]
+                    bestBoard = Avilabeboard
+                    bestChoice = choices[Availbesboards.index(Avilabeboard)]
+                alpha = max(alpha,v)#Pick the Max value
+                if beta <= alpha:
+                    break
+            return([v,bestBoard,bestChoice])
+        else:#Min the move for the User
+            v = float("inf")
+            bestBoard = []
+            bestChoice = []
+            for Avilabeboard in Availbesboards:
+                boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,2)#Call the new possible board to check Max and so on...
+                if boardValue[0]<v:
+                    v = boardValue[0]
+                    bestBoard = Avilabeboard
+                    bestChoice = choices[Availbesboards.index(Avilabeboard)]
+                beta = min(beta,v)#Pick the Min value
+                if beta<=alpha:
+                    break
+            return([v,bestBoard,bestChoice])
+#-----------------------------------------------------------------------
+    def validBoard(self,playernum):
+        tmpboard = self.board
+        for cell in convert:
+            tmpboard[cell[0]][cell[1]] = playernum
+        return tmpboard
 #-----------------------------------------------------------------------
     def finalResult(self):#Contain Draw and Winner (NOT nessecery to be Full)
         sum_1 = 0
