@@ -4,12 +4,10 @@
 # The game is played on an 8x8 grid board.
 # Each player has disks that are typically black on one side and white on the other.
 # The objective of the game is to have the majority of disks turned to display your color (black or white) by the end of the game.
-# The Game uses Alpha-Beta Method (AI) to Generate the best solution for Meduim & Hard levels
-
+# The Game uses Alpha-Beta Method (AI) to Generate the best solution 
 import tkinter as tk
 from Board import *
 from Player import *
-#Win - Draw - ShowValidMoves - IsValid
 
 class Manger:
     def __init__(self, master ):
@@ -20,8 +18,9 @@ class Manger:
         self.user = Player(32,"b")
         self.PC = Player(32,"w")
 
-        self.board = Board(master,self.user,self.PC)
-
+        self.board = Board(master,self.user,self.PC,"easy")
+        # self.board = Board(master,self.user,self.PC,"medium")
+        # self.board = Board(master,self.user,self.PC,"hard")
 def main():
     root = tk.Tk()
     app = Manger(root)

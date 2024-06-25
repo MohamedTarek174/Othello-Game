@@ -1,21 +1,21 @@
 import tkinter as tk
-import tkinter.messagebox
-import Player
-import time
+
 import random
 from math import *
 
-#AlphaBeta
-
+bckgroundclr= "#222"
+Level = ""
 depth = 0
 convert = []
 
 class Board:
-    def __init__(self, master ,user,pc):
+    def __init__(self, master ,user,pc,level):
+        global Level
         self.master = master
         self.user = user
         self.pc = pc
-
+        Level = level
+    
         self.master.title("Othello")
         self.canvas = tk.Canvas(master, width=400, height=400, bg="white")#Original 400*400
         self.canvas.pack()
@@ -49,7 +49,7 @@ class Board:
                 y0 = j * 50
                 x1 = x0 + 50
                 y1 = y0 + 50
-                self.canvas.create_rectangle(x0, y0, x1, y1, fill="green")         
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#222")         
 #-----------------------------------------------------------------------
     def place_oval(self,row , col,symbol):
         if 0 <= col < self.board_size and 0 <= row < self.board_size and self.board[row][col] == 0:
@@ -87,7 +87,6 @@ class Board:
             self.canvas.create_oval(x0, y0, x1, y1,fill="black")
             self.make_line(convert,1)
         
-        #If user pick not available move and there are/is availabe move(s)
 
         NewUserScore = self.ScoreRecord(1)#It Calculate the new updated score after making a move
         NewPCScore = self.ScoreRecord(2)
@@ -98,11 +97,12 @@ class Board:
         #Clear the Highlighted ovals that valid to the user
         self.clearValidMoves()
 
-        self.PC_move()
+        self.master.after(2000, self.PC_move)
 #-----------------------------------------------------------------------
     def PC_move(self):
         #------------------PC Turn----------------------------------
-        pcrow,pccolm = self.create_difficulty("easy")      
+        global Level
+        pcrow,pccolm = self.create_difficulty(Level)      
         if pcrow == None or pcrow == None:#If no Valid moves
             self.GameOver()  
             #Show the Avialable moves again when no valid moves for PC and there are for user
@@ -202,7 +202,7 @@ class Board:
                     y0 = row * 50
                     x1 = x0 + 50
                     y1 = y0 + 50
-                    self.canvas.create_rectangle(x0, y0, x1, y1,fill="green")              
+                    self.canvas.create_rectangle(x0, y0, x1, y1,fill="#222")              
 #-----------------------------------------------------------------------
     def create_difficulty(self,level):
             global depth
@@ -243,47 +243,48 @@ class Board:
         return x,y     
 #-----------------------------------------------------------------------
     def alphaBeta(self,myboard,depth,alpha,beta,maximizing):
-        Availbesboards = []
-        choices = []
+        return 0
+        # Availbesboards = []
+        # choices = []
 
-        for x in range(8):
-            for y in range(8):
-                if self.valid_move(x,y,2):
-                    test = self.validBoard(2)
-                    Availbesboards.append(test)#list of boards that each (solution of valid move)
-                    choices.append([x,y])#valid points/move that make this possible solution
+        # for x in range(8):
+        #     for y in range(8):
+        #         if self.valid_move(x,y,2):
+        #             test = self.validBoard(2)
+        #             Availbesboards.append(test)#list of boards that each (solution of valid move)
+        #             choices.append([x,y])#valid points/move that make this possible solution
 
-        if depth == 0 or len(choices) == 0:#no valid moves
-            return (self.easyMode())
+        # if depth == 0 or len(choices) == 0:#no valid moves
+        #     return (self.easyMode())
 
-        if maximizing == 2:#Max the move for the PC
-            v = -float("inf")
-            bestBoard = []
-            bestChoice = []
-            for Avilabeboard in Availbesboards:#Check each possible board 
-                boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,1)#Call the new possible board to check Min
-                if boardValue[0]>v:
-                    v = boardValue[0]
-                    bestBoard = Avilabeboard
-                    bestChoice = choices[Availbesboards.index(Avilabeboard)]
-                alpha = max(alpha,v)#Pick the Max value
-                if beta <= alpha:
-                    break
-            return([v,bestBoard,bestChoice])
-        else:#Min the move for the User
-            v = float("inf")
-            bestBoard = []
-            bestChoice = []
-            for Avilabeboard in Availbesboards:
-                boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,2)#Call the new possible board to check Max and so on...
-                if boardValue[0]<v:
-                    v = boardValue[0]
-                    bestBoard = Avilabeboard
-                    bestChoice = choices[Availbesboards.index(Avilabeboard)]
-                beta = min(beta,v)#Pick the Min value
-                if beta<=alpha:
-                    break
-            return([v,bestBoard,bestChoice])
+        # if maximizing == 2:#Max the move for the PC
+        #     v = -float("inf")
+        #     bestBoard = []
+        #     bestChoice = []
+        #     for Avilabeboard in Availbesboards:#Check each possible board 
+        #         boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,1)#Call the new possible board to check Min
+        #         if boardValue[0]>v:
+        #             v = boardValue[0]
+        #             bestBoard = Avilabeboard
+        #             bestChoice = choices[Availbesboards.index(Avilabeboard)]
+        #         alpha = max(alpha,v)#Pick the Max value
+        #         if beta <= alpha:
+        #             break
+        #     return([v,bestBoard,bestChoice])
+        # else:#Min the move for the User
+        #     v = float("inf")
+        #     bestBoard = []
+        #     bestChoice = []
+        #     for Avilabeboard in Availbesboards:
+        #         boardValue = self.alphaBeta(Avilabeboard,depth-1,alpha,beta,2)#Call the new possible board to check Max and so on...
+        #         if boardValue[0]<v:
+        #             v = boardValue[0]
+        #             bestBoard = Avilabeboard
+        #             bestChoice = choices[Availbesboards.index(Avilabeboard)]
+        #         beta = min(beta,v)#Pick the Min value
+        #         if beta<=alpha:
+        #             break
+        #     return([v,bestBoard,bestChoice])
 #-----------------------------------------------------------------------
     def validBoard(self,playernum):
         tmpboard = self.board
@@ -336,9 +337,3 @@ class Board:
                 self.player1_score_label.config(text="Draw with score " + str(score))
                 self.player2_score_label.config(text="")
 #-----------------------------------------------------------------------
-    # def checkZeros(self):#Check if the game is finished when board full
-    #     for i in range(self.board_size):
-    #         for j in range(self.board_size):
-    #             if self.board[i][j] == 0:
-    #                 return True
-    #     return False #Board is full
